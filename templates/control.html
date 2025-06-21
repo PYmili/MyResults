@@ -1,0 +1,742 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人成果管理系统 - 资料管理</title>
+    <link href="{% static 'css/tailwind.min.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'fontawesome-free-6.7.2-web/css/all.min.css' %}">
+    <!-- Bootstrap for modals and interactive components -->
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/control.css' %}" rel="stylesheet">
+</head>
+
+<body class="bg-gray-50 font-sans">
+<div class="flex h-screen">
+    <!-- 左侧边栏 -->
+    <aside class="w-64 bg-white shadow-lg flex-shrink-0 hidden md:block">
+        <div class="p-4 border-b flex items-center justify-between relative">
+            <h1 class="text-2xl font-bold text-blue-600">个人成果管理系统</h1>
+        </div>
+
+        <div class="p-4">
+            <div class="flex items-center mb-6 relative">
+                <img src="{{ user.avatar.url }}"
+                     alt="用户头像" class="w-12 h-12 rounded-full">
+                <div class="ml-3">
+                    <h3 class="font-medium text-gray-800">{{ user.get_full_name|default:user.username }}</h3>
+                    <p class="text-sm text-gray-500">
+                        {% if user.is_admin %}
+                            管理员
+                        {% else %}
+                            普通用户
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <nav>
+                <ul>
+                    <li class="mb-1">
+                        <a href="{% url 'home' %}" class="sidebar-item block p-3 rounded-lg text-gray-600 font-medium">
+                            <i class="fas fa-home mr-2"></i>返回主页
+                        </a>
+                    </li>
+                    {% if user.is_admin %}
+                        <li class="mb-1">
+                            <a href="#category-section"
+                               class="sidebar-item block p-3 rounded-lg text-blue-600 font-medium active"
+                               onclick="showSection('category-section')">
+                                <i class="fas fa-folder mr-2"></i>分类管理
+                            </a>
+                        </li>
+                    {% endif %}
+                    <li class="mb-1">
+                        <a href="#achievement-section"
+                           class="sidebar-item block p-3 rounded-lg text-gray-600 font-medium"
+                           onclick="showSection('achievement-section')">
+                            <i class="fas fa-trophy mr-2"></i>成果管理
+                        </a>
+                    </li>
+                    {% if user.is_admin %}
+                        <li class="mb-1">
+                            <a href="#user-section" class="sidebar-item block p-3 rounded-lg text-gray-600 font-medium"
+                               onclick="showSection('user-section')">
+                                <i class="fas fa-users mr-2"></i>用户管理
+                            </a>
+                        </li>
+                    {% endif %}
+                    {% if user.is_admin %}
+                        <li class="mb-1">
+                            <a href="#news-section" class="sidebar-item block p-3 rounded-lg text-gray-600 font-medium"
+                               onclick="showSection('news-section')">
+                                <i class="fas fa-newspaper mr-2"></i>新闻管理
+                            </a>
+                        </li>
+                    {% endif %}
+                    <li class="mb-1">
+                        <form action="{% url 'sign_out' %}" method="post">
+                            {% csrf_token %}
+                            <button
+                                    type="submit"
+                                    name="id"
+                                    value="{{ user.id }}"
+                                    class="sidebar-item block p-3 rounded-lg text-gray-600 font-medium"
+                            >
+                                退出登录
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <div class="flex-1 overflow-y-auto p-6 content-center">
+        <!-- 页面标题 -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-800">资料管理</h2>
+                <p class="text-gray-600">管理您的成果分类和个人成果信息</p>
+            </div>
+        </div>
+
+        <!-- 消息提示 -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-4" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% if user.is_admin %}
+            <!-- 分类管理内容区 -->
+            <section id="category-section" class="tab-content active mb-10">
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">成果分类设置</h3>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                            data-bs-target="#addCategoryModal">
+                        <i class="fas fa-plus me-2"></i>添加新分类
+                    </button>
+                </div>
+
+                <p class="text-gray-700 mb-6">
+                    您可以创建和管理成果分类，便于对成果进行整理和查找。
+                </p>
+
+                <!-- 分类表格 -->
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="p-4 border-b border-gray-200">
+                        <h4 class="font-semibold text-gray-800">分类列表</h4>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                            <tr>
+                                <th scope="col" class="px-4 py-3">分类名称</th>
+                                <th scope="col" class="px-4 py-3">描述</th>
+                                <th scope="col" class="px-4 py-3">创建时间</th>
+                                <th scope="col" class="px-4 py-3">操作</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for category in categories %}
+                                <tr>
+                                    <td class="px-4 py-3">
+                                        <div class="font-medium text-gray-900">{{ category.name }}</div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="text-gray-600">{{ category.description|default:"暂无描述" }}</div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="text-gray-500">{{ category.created_at|date:"Y-m-d" }}</div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="btn-group" role="group">
+                                            <form method="post" action="{% url 'delete_category' %}"
+                                                  class="d-inline-block">
+                                                {% csrf_token %}
+                                                <button type="submit" name="id" value="{{ category.id }}"
+                                                        class="btn btn-sm btn-outline-danger">
+                                                    <i class="fas fa-trash"></i> 删除
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-gray-500">
+                                        暂无分类数据
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        {% endif %}
+
+        <!-- 成果管理内容区 -->
+        <section id="achievement-section" class="tab-content mb-10">
+            <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                <h3 class="text-xl font-bold text-gray-800">成果管理</h3>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                        data-bs-target="#addAchievementModal">
+                    <i class="fas fa-plus me-2"></i>添加新成果
+                </button>
+            </div>
+
+            <!-- 成果列表 -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                    <h4 class="font-semibold text-gray-800">我的成果列表</h4>
+                    <form method="GET" class="d-flex gap-2">
+                        <select name="category_filter" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">全部分类</option>
+                            {% for category in categories %}
+                                <option value="{{ category.name }}"
+                                        {% if request.GET.category_filter == category.name|stringformat:"s" %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <select name="sort_by" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="datetime"
+                                    {% if request.GET.sort_by == 'datetime' %}selected{% endif %}>
+                                按时间排序 (升序)
+                            </option>
+                            <option value="-datetime"
+                                    {% if request.GET.sort_by == '-datetime' %}selected{% endif %}>
+                                按时间排序 (降序)
+                            </option>
+                        </select>
+                    </form>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th scope="col" class="px-4 py-3">名称</th>
+                            <th scope="col" class="px-4 py-3">分类</th>
+                            <th scope="col" class="px-4 py-3">时间</th>
+                            <th scope="col" class="px-4 py-3">描述</th>
+                            <th scope="col" class="px-4 py-3">公开</th>
+                            <th scope="col" class="px-4 py-3">操作</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for achievement in achievements %}
+                            <tr>
+                                <td class="px-4 py-3">
+                                    <div class="font-medium text-gray-900">{{ achievement.name }}</div>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="font-medium text-gray-900">{{ achievement.category }}</span>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <div class="text-gray-500">{{ achievement.datetime|date:"Y-m-d" }}</div>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="font-medium text-gray-900">{{ achievement.description|striptags|truncatechars:10 }}</span>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <div class="font-medium text-gray-500">{{ achievement.is_published|yesno:"是,否" }}</div>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <div class="flex gap-2">
+                                        {% if achievement.file %}
+                                            <a type="button" target="_blank" class="btn btn-sm btn-outline-primary"
+                                               href="{{ achievement.file.url }}">
+                                                查看文件
+                                            </a>
+                                        {% endif %}
+                                        <!-- 删除按钮 -->
+                                        <form method="post" action="{% url 'delete_achievement' %}"
+                                              class="d-inline-block">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" name="id"
+                                                    value="{{ achievement.id }}">
+                                                <i class="fas fa-trash"></i> 删除
+                                            </button>
+                                        </form>
+
+                                        <!-- 切换公开状态按钮 -->
+                                        <form method="post" action="{% url 'toggle_publish_achievement' %}"
+                                              class="d-inline-block">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="btn btn-sm {% if achievement.is_published %}btn-success{% else %}btn-warning{% endif %}"
+                                                    name="id" value="{{ achievement.id }}">
+                                                <i class="fas {% if achievement.is_published %}fa-eye{% else %}fa-eye-slash{% endif %}"></i>
+                                                {{ achievement.is_published|yesno:"公开中,未公开" }}
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-gray-500">
+                                    暂无成果数据
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        {% if user.is_admin %}
+            <!-- 用户管理内容区 -->
+            <section id="user-section" class="tab-content mb-10">
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">用户管理</h3>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                        <i class="fas fa-plus me-2"></i>添加新用户
+                    </button>
+                </div>
+
+                <p class="text-gray-700 mb-6">
+                    您可以查看和管理系统中的用户。
+                </p>
+
+                <!-- 用户表格 -->
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                        <h4 class="font-semibold text-gray-800">用户列表</h4>
+                        <form method="GET" class="d-flex gap-2">
+                            <select name="status_filter" class="form-select form-select-sm"
+                                    onchange="this.form.submit()">
+                                <option value="">所有用户</option>
+                                <option value="active"
+                                        {% if request.GET.status_filter == 'active' %}selected{% endif %}>活跃用户
+                                </option>
+                                <option value="inactive"
+                                        {% if request.GET.status_filter == 'inactive' %}selected{% endif %}>非活跃用户
+                                </option>
+                            </select>
+                        </form>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                            <tr>
+                                <th scope="col" class="px-4 py-3">用户名</th>
+                                <th scope="col" class="px-4 py-3">公开</th>
+                                <th scope="col" class="px-4 py-3">管理员</th>
+                                <th scope="col" class="px-4 py-3">操作</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for user in users %}
+                                <tr>
+                                    <td class="px-4 py-3">
+                                        <div class="font-medium text-gray-900">{{ user.username }}</div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="font-medium text-gray-500">{{ user.is_published|yesno:"是,否" }}</div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="font-medium text-gray-500">{{ user.is_admin|yesno:"是,否" }}</div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex gap-2">
+                                            <form method="post" action="{% url 'delete_user' %}" class="d-inline-block">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" name="id"
+                                                        value="{{ user.id }}">
+                                                    <i class="fas fa-trash"></i> 删除
+                                                </button>
+                                            </form>
+                                            <form method="post" action="{% url 'toggle_publish_user' %}"
+                                                  class="d-inline-block">
+                                                {% csrf_token %}
+                                                <button type="submit"
+                                                        class="btn btn-sm {% if user.is_published %}btn-success{% else %}btn-warning{% endif %}"
+                                                        name="id" value="{{ user.id }}">
+                                                    <i class="fas {% if user.is_published %}fa-eye{% else %}fa-eye-slash{% endif %}"></i>
+                                                    {{ user.is_published|yesno:"公开中,未公开" }}
+                                                </button>
+                                            </form>
+                                            <form method="post" action="{% url 'toggle_admin_user' %}"
+                                                  class="d-inline-block">
+                                                {% csrf_token %}
+                                                <button type="submit"
+                                                        class="btn btn-sm {% if user.is_admin %}btn-success{% else %}btn-outline-secondary{% endif %}"
+                                                        name="id" value="{{ user.id }}">
+                                                    <i class="fas {% if user.is_admin %}fa-check{% else %}fa-user{% endif %}"></i>
+                                                    {{ user.is_admin|yesno:"管理员,普通用户" }}
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4 text-gray-500">
+                                        暂无用户数据
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        {% endif %}
+        {% if user.is_admin %}
+            <!-- 新闻管理内容区 -->
+            <section id="news-section" class="tab-content mb-10">
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">新闻管理</h3>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addNewsModal">
+                        <i class="fas fa-plus me-2"></i>添加新新闻
+                    </button>
+                </div>
+
+                <p class="text-gray-700 mb-6">
+                    您可以创建和管理网站新闻，便于向用户传达重要信息。
+                </p>
+
+                <!-- 新闻表格 -->
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="p-4 border-b border-gray-200">
+                        <h4 class="font-semibold text-gray-800">新闻列表</h4>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                            <tr>
+                                <th scope="col" class="px-4 py-3">新闻标题</th>
+                                <th scope="col" class="px-4 py-3">发布日期</th>
+                                <th scope="col" class="px-4 py-3">操作</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for news in news %}
+                                <tr>
+                                    <td class="px-4 py-3">
+                                        <div class="font-medium text-gray-900">{{ news.title }}</div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="text-gray-500">{{ news.datetime|date:"Y-m-d" }}</div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <div class="flex gap-2">
+                                            <form method="post" action="{% url 'delete_news' %}" class="d-inline-block">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" name="id"
+                                                        value="{{ news.id }}">
+                                                    <i class="fas fa-trash"></i> 删除
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-gray-500">
+                                        暂无新闻数据
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 添加新闻模态框 -->
+<div class="modal fade" id="addNewsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'add_news' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">添加新新闻</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="newsTitle" class="form-label">新闻标题</label>
+                        <input type="text" class="form-control" id="newsTitle" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newsContent" class="form-label">新闻内容</label>
+                        <textarea class="form-control" id="newsContent" name="content" rows="5" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存新闻</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 添加分类模态框 -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'add_category' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">添加新分类</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="categoryName" class="form-label">分类名称</label>
+                        <input type="text" class="form-control" id="categoryName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="categoryDescription" class="form-label">描述</label>
+                        <textarea class="form-control" id="categoryDescription" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存分类</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 删除分类确认模态框 -->
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'delete_category' %}">
+                {% csrf_token %}
+                <input type="hidden" id="deleteCategoryId" name="category_id">
+                <div class="modal-header">
+                    <h5 class="modal-title">确认删除</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>确定要删除分类 "<span id="deleteCategoryName"></span>" 吗？</p>
+                    <p class="text-danger small">此操作不可撤销。</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-danger">确认删除</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 添加成果模态框 -->
+<div class="modal fade" id="addAchievementModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'add_achievement' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="text" id="username" name="username" value="{{ user.username }}" hidden="hidden">
+                <div class="modal-header">
+                    <h5 class="modal-title">添加新成果</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="achievementName" class="form-label">成果名称</label>
+                        <input type="text" class="form-control" id="achievementName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="achievementDate" class="form-label">取得时间</label>
+                        <input type="date" class="form-control" id="achievementDate" name="achieved_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="achievementDescription" class="form-label">描述</label>
+                        <textarea class="form-control" id="achievementDescription" name="description"
+                                  rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="achievementFile" class="form-label">相关文件 (可选)</label>
+                        <input type="file" class="form-control" id="achievementFile" name="file">
+                    </div>
+                    <div class="mb-3">
+                        <label for="achievementCategory" class="form-label">分类</label>
+                        <select class="form-select" id="achievementCategory" name="category" required>
+                            <option value="">选择分类</option>
+                            {% for category in categories %}
+                                <option value="{{ category.name }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">是否公开</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="is_public" id="publicYes" value="True"
+                                   checked>
+                            <label class="form-check-label" for="publicYes">
+                                公开
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="is_public" id="publicNo" value="False">
+                            <label class="form-check-label" for="publicNo">
+                                不公开
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存成果</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 添加用户模态框 -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{% url 'add_user' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">添加新用户</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">用户名</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">密码</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">邮箱</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="avatar" class="form-label">头像 (可选)</label>
+                        <input type="file" class="form-control" id="avatar" name="avatar">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">是否公开</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="is_published" id="userPublicYes"
+                                   value="True" checked>
+                            <label class="form-check-label" for="userPublicYes">
+                                公开
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="is_published" id="userPublicNo"
+                                   value="False">
+                            <label class="form-check-label" for="userPublicNo">
+                                不公开
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">是否是管理员</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="is_admin" id="adminYes" value="True">
+                            <label class="form-check-label" for="adminYes">
+                                是管理员
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="is_admin" id="adminNo" value="False"
+                                   checked>
+                            <label class="form-check-label" for="adminNo">
+                                不是管理员
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">保存用户</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(function () {
+            const hash = window.location.hash;
+            if (hash) {
+                const sectionId = hash.substring(1); // 去掉hash中的'#'字符
+                // 调用现有的showSection函数来切换到相应的部分
+                showSection(sectionId);
+            }
+        }, 100);
+    });
+
+    // 修改后的showSection函数
+    function showSection(sectionId) {
+        // 隐藏所有内容区
+        document.querySelectorAll('.tab-content').forEach(section => {
+            section.classList.remove('active');
+        });
+
+        // 显示目标内容区
+        const targetSection = document.getElementById(sectionId);
+        if (targetSection) {
+            targetSection.classList.add('active');
+        }
+
+        // 更新侧边栏活动状态
+        document.querySelectorAll('.sidebar-item').forEach(item => {
+            item.classList.remove('active');
+        });
+
+        // 找到对应的侧边栏项并激活它
+        const activeSidebarItem = document.querySelector(`a[href="#${sectionId}"]`);
+        if (activeSidebarItem) {
+            activeSidebarItem.classList.add('active');
+        }
+    }
+
+    // 删除分类模态框数据填充
+    document.getElementById('deleteCategoryModal').addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const categoryId = button.getAttribute('data-category-id');
+        const categoryName = button.getAttribute('data-category-name');
+
+        document.getElementById('deleteCategoryId').value = categoryId;
+        document.getElementById('deleteCategoryName').textContent = categoryName;
+    });
+
+    // 删除新闻模态框数据填充
+    document.getElementById('deleteNewsModal').addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const newsId = button.getAttribute('data-news-id');
+        const newsTitle = button.getAttribute('data-news-title');
+
+        document.getElementById('deleteNewsId').value = newsId;
+        document.getElementById('deleteNewsTitle').textContent = newsTitle;
+    });
+</script>
+</body>
+
+</html>

@@ -1,0 +1,193 @@
+<!-- home.html -->
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人成果管理系统 - 首页</title>
+    <link href="{% static 'css/tailwind.min.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'fontawesome-free-6.7.2-web/css/all.min.css' %}">
+    <style>
+        .content-center {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .achievement-tag {
+            display: inline-block;
+            margin-right: 6px;
+            margin-bottom: 6px;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 font-sans">
+<div class="min-h-screen py-4">
+    <!-- 顶部导航 - 增加底部边距为 mb-8 -->
+    <header class="content-center bg-white rounded-lg shadow-md p-4 mb-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">个人成果管理系统</h1>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <a href="{% url 'login' %}"
+                   class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center">
+                    <i class="fas fa-sign-in-alt mr-2"></i>登录
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- 内容区域 - 居中布局 -->
+    <main class="content-center px-4">
+        <!-- 新闻动态 -->
+        <section id="news" class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-newspaper mr-2 text-blue-600"></i>新闻动态
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {% for newsItem in news %}
+                    <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">{{ newsItem.title }}</h3>
+                        <p class="text-gray-600 text-sm mb-2">{{ newsItem.datetime|date:"Y-m-d" }}</p>
+                        <p class="text-gray-700">
+                            {{ newsItem.content }}
+                        </p>
+                    </div>
+                {% endfor %}
+{#                <div class="bg-white rounded-lg shadow-md p-6 card-hover">#}
+{#                    <h3 class="text-xl font-semibold text-gray-800 mb-2">系统更新公告</h3>#}
+{#                    <p class="text-gray-600 text-sm mb-2">2025年6月9日</p>#}
+{#                    <p class="text-gray-700">#}
+{#                        个人成果管理系统已更新至v2.0版本，新增成果批量导入功能和自定义分类图标功能，提升用户体验。#}
+{#                    </p>#}
+{#                </div>#}
+{#                <div class="bg-white rounded-lg shadow-md p-6 card-hover">#}
+{#                    <h3 class="text-xl font-semibold text-gray-800 mb-2">使用技巧分享</h3>#}
+{#                    <p class="text-gray-600 text-sm mb-2">2025年5月20日</p>#}
+{#                    <p class="text-gray-700">#}
+{#                        如何高效管理大量成果？建议使用分类管理功能，按竞赛、奖励、技能证书等类别整理，便于快速查找。#}
+{#                    </p>#}
+{#                </div>#}
+            </div>
+        </section>
+
+        <!-- 用户展示 - 直接显示公开成果（两排布局） -->
+        <section id="user-display" class="mb-10">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-user-friends mr-2 text-blue-600"></i>公开用户成果展示
+            </h2>
+            <p class="text-gray-700 mb-6">以下是选择公开信息的用户及其公开成果：</p>
+            <div id="user-list" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {% for user in database_users %}
+                    <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+                        <div class="flex items-start mb-4">
+                            <img src="{{ user.avatar.url }}" alt="{{ user.username }} 头像"
+                                 class="w-16 h-16 rounded-full mr-4">
+                            <div>
+                                <h3 class="text-xl font-semibold text-gray-800">{{ user.username }}</h3>
+                                <p class="text-gray-600">{{ user.major }}</p>
+                            </div>
+                        </div>
+                        <div class="border-t border-gray-200 pt-4">
+                            <h4 class="font-semibold text-gray-800 mb-3">公开成果</h4>
+                            <div class="space-y-3">
+                                {% for achievement in achievements %}
+                                    {% if achievement.username == user.username %}
+                                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                            <div>
+                                                <h5 class="font-medium text-gray-900">{{ achievement.description }}</h5>
+                                                <p class="text-sm text-gray-500">{{ achievement.datetime|date:"Y-m-d" }}</p>
+                                            </div>
+                                            <span
+                                                    class="px-2 py-1 text-xs font-semibold rounded-full {% if achievement.category == '竞赛' %}bg-blue-100 text-blue-800{% elif achievement.category == '奖励' %}bg-green-100 text-green-800{% elif achievement.category == '技能证书' %}bg-purple-100 text-purple-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ achievement.type }}
+                  </span>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- 隐私告知 - 靠左显示 -->
+        <section id="privacy" class="mb-10">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-shield-alt mr-2 text-blue-600"></i>隐私告知
+            </h2>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">隐私保护政策</h3>
+                <p class="text-gray-700 mb-4 text-left">
+                    1. 我们尊重用户的隐私，严格保护用户个人信息及成果数据。
+                </p>
+                <p class="text-gray-700 mb-4 text-left">
+                    2. 用户可以自主选择是否公开个人信息及成果，系统不会默认公开任何内容。
+                </p>
+                <p class="text-gray-700 mb-4 text-left">
+                    3. 公开的信息仅对已注册并登录的用户可见，未注册用户无法查看任何公开内容。
+                </p>
+                <p class="text-gray-700 mb-4 text-left">
+                    4. 我们不会将用户的个人信息及成果数据用于任何商业用途，除非获得用户明确授权。
+                </p>
+                <p class="text-gray-700 text-left">
+                    5. 用户可以随时在账户设置中修改隐私设置，关闭个人信息及成果的公开状态。
+                </p>
+            </div>
+        </section>
+
+        <!-- 使用说明 - 靠左显示 -->
+        <section id="guide" class="mb-10">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-book mr-2 text-blue-600"></i>使用说明
+            </h2>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">系统使用指南</h3>
+                <ol class="list-decimal pl-5 text-gray-700 space-y-2 text-left max-w-2xl">
+                    <li>
+                        <strong>注册与登录：</strong>首次使用请先注册账号，登录后即可开始管理个人成果。
+                    </li>
+                    <li>
+                        <strong>成果分类：</strong>在"资料管理-分类管理"中创建分类（如竞赛、奖励、技能证书等）。
+                    </li>
+                    <li>
+                        <strong>添加成果：</strong>在"资料管理-成果管理"中点击"添加成果"，选择分类并填写相关信息。
+                    </li>
+                    <li>
+                        <strong>上传附件：</strong>成果可以上传图片或PDF文件，图片将自动转换为A4尺寸的PDF。
+                    </li>
+                    <li>
+                        <strong>成果排序：</strong>成果默认按取得时间排序，最新的成果显示在最前面。
+                    </li>
+                    <li>
+                        <strong>成果预览：</strong>点击成果名称即可在线预览已上传的附件。
+                    </li>
+                    <li>
+                        <strong>隐私设置：</strong>在个人设置中可以设置是否公开个人信息及成果。
+                    </li>
+                </ol>
+            </div>
+        </section>
+    </main>
+
+    <!-- 底部导航 - 居中布局 -->
+    <footer class="content-center mt-12 text-center text-gray-500 text-sm">
+        <p>个人成果管理系统 &copy; 2025 版权所有</p>
+    </footer>
+</div>
+</body>
+
+</html>

@@ -1,0 +1,105 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人成果管理系统 - 登录</title>
+    <link href="{% static 'css/tailwind.min.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'fontawesome-free-6.7.2-web/css/all.min.css' %}">
+    <style>
+        .login-form {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .login-form:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+        }
+
+        .bg-gradient-login {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+    <div class="container mx-auto px-4 py-8">
+        <div class="login-form bg-white rounded-xl p-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">个人成果管理系统</h1>
+            <p class="text-gray-600 text-center mb-8">高效管理您的个人成果与荣誉</p>
+
+            {% if response is not None %}
+                <script type="application/javascript">
+                    alert("{{ response.msg }}");
+                </script>
+            {% endif %}
+
+            <form id="loginForm" class="space-y-4" action="{% url 'login' %}" method="post">
+                {% csrf_token %}
+                <div>
+                    <label for="username" class="block text-gray-700 font-medium mb-2">
+                        <i class="fas fa-user mr-2 text-blue-600"></i>用户名
+                    </label>
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="请输入用户名"
+                        required
+                    >
+                </div>
+
+                <div>
+                    <label for="password" class="block text-gray-700 font-medium mb-2">
+                        <i class="fas fa-lock mr-2 text-blue-600"></i>密码
+                    </label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="请输入密码"
+                        required
+                    >
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center">
+                        <input type="checkbox" class="h-4 w-4 text-blue-600">
+                        <span class="ml-2 text-gray-700">记住我</span>
+                    </label>
+                    <a href="#" class="text-blue-600 hover:text-blue-800 text-sm">忘记密码?</a>
+                </div>
+
+                <button
+                    type="submit"
+                    name="action"
+                    value="login"
+                    class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 ease-in-out"
+                >
+                    <i class="fas fa-sign-in-alt mr-2"></i>登录系统
+                </button>
+                <!-- 新增注册按钮 -->
+                <div class="mt-6 text-center">
+                    <button
+                        type="submit"
+                        name="action"
+                        value="register"
+                        class="w-full bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition duration-150 ease-in-out"
+                    >
+                    <i class="fas fa-user-plus mr-2"></i>注册新账号
+                </button>
+                </div>
+            </form>
+
+            <div class="mt-4 text-center text-gray-500 text-sm">
+                <p>已有账号? <a href="#" class="text-blue-600 hover:text-blue-800">直接登录</a></p>
+            </div>
+        </div>
+    </div>
+    <script type="application/javascript" href="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>
